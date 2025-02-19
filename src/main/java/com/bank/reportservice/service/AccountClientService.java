@@ -4,17 +4,21 @@ import com.bank.reportservice.dto.BaseResponse;
 import com.bank.reportservice.model.account.Account;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-
+@Service
 @Slf4j
-@RequiredArgsConstructor
 public class AccountClientService {
     private final WebClient webClient;
-    public AccountClientService(WebClient.Builder builder, String baseUrl) {
+    private final String baseUrl;
+    public AccountClientService(WebClient.Builder builder, @Value("${services.account-url}") String baseUrl) {
+        this.baseUrl = baseUrl;
         this.webClient = builder.baseUrl(baseUrl).build();
     }
     public Mono<List<Account>> getAccountsByCustomer(String customerId) {

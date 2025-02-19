@@ -5,17 +5,21 @@ import com.bank.reportservice.model.credit.Credit;
 import com.bank.reportservice.model.creditcard.CreditCard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+@Service
 @Slf4j
-@RequiredArgsConstructor
 public class CreditClientService {
     private final WebClient webClient;
-    public CreditClientService(WebClient.Builder builder, String baseUrl) {
+    private final String baseUrl;
+    public CreditClientService(WebClient.Builder builder, @Value("${services.credit-url}") String baseUrl) {
+        this.baseUrl = baseUrl;
         this.webClient = builder.baseUrl(baseUrl).build();
     }
     public Mono<List<CreditCard>> getCreditCardsByCustomer(String customerId) {

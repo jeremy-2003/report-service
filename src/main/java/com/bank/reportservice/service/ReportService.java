@@ -20,11 +20,19 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class ReportService {
     private final AccountClientService accountClient;
     private final CreditClientService creditClient;
     private final TransactionClientService transactionClient;
+
+    public ReportService(AccountClientService accountClient,
+                         CreditClientService creditClient,
+                         TransactionClientService transactionClient){
+        this.accountClient = accountClient;
+        this.creditClient = creditClient;
+        this.transactionClient = transactionClient;
+    }
+
     public Mono<CustomerBalances> getCustomerBalances(String customerId) {
         return Mono.zip(
                 accountClient.getAccountsByCustomer(customerId),

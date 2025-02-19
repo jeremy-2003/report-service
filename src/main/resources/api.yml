@@ -1,0 +1,149 @@
+openapi: 3.0.3
+info:
+  title: Report Service API
+  description: API para la generación de reportes financieros y consultas agregadas.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8085
+    description: Servidor local
+paths:
+  /api/reports/balances/customer/{customerId}:
+    get:
+      summary: Obtener los saldos de los productos financieros de un cliente
+      description: Recupera los saldos de cuentas, tarjetas de crédito y créditos asociados a un cliente.
+      operationId: getCustomerBalances
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID del cliente
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saldos recuperados exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseCustomerBalances'
+        '404':
+          description: No se encontraron saldos para el cliente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmpty'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmpty'
+  /api/reports/movements/customer/{customerId}/product/{productId}:
+    get:
+      summary: Obtener los movimientos de un producto financiero
+      description: Recupera los movimientos asociados a una cuenta, tarjeta de crédito o crédito de un cliente.
+      operationId: getProductMovements
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID del cliente
+          schema:
+            type: string
+        - name: productId
+          in: path
+          required: true
+          description: ID del producto financiero
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Movimientos recuperados exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseProductMovements'
+        '404':
+          description: No se encontraron movimientos para el producto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmpty'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmpty'
+components:
+  schemas:
+    BaseResponseCustomerBalances:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/CustomerBalances'
+    BaseResponseProductMovements:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductMovement'
+    BaseResponseEmpty:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+    CustomerBalances:
+      type: object
+      properties:
+        customerId:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductBalance'
+    ProductBalance:
+      type: object
+      properties:
+        productId:
+          type: string
+        customerId:
+          type: string
+        type:
+          type: string
+          enum: [ACCOUNT, CREDIT_CARD, CREDIT]
+        subType:
+          type: string
+          enum: [SAVINGS, CHECKING, FIXED_TERM, PERSONAL_CREDIT_CARD, BUSINESS_CREDIT_CARD, PERSONAL_CREDIT, BUSINESS_CREDIT]
+        availableBalance:
+          type: number
+          format: double
+    ProductMovement:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        date:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL, PAYMENT, PURCHASE]
+        amount:
+          type: number
+          format: double
+        productCategory:
+          type: string
+        productSubType:
+          type: string

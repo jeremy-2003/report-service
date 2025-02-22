@@ -1,21 +1,24 @@
 package com.bank.reportservice.service;
 
-import com.bank.reportservice.dto.CustomerBalances;
-import com.bank.reportservice.dto.ProductBalance;
-import com.bank.reportservice.dto.ProductMovement;
+import com.bank.reportservice.dto.*;
 import com.bank.reportservice.model.account.AccountType;
+import com.bank.reportservice.model.balance.DailyBalance;
 import com.bank.reportservice.model.credit.CreditType;
 import com.bank.reportservice.model.creditcard.CreditCardType;
 import com.bank.reportservice.model.transaction.ProductCategory;
 import com.bank.reportservice.model.transaction.ProductSubType;
-import lombok.RequiredArgsConstructor;
+import com.bank.reportservice.model.transaction.Transaction;
+import com.bank.reportservice.repository.DailyBalanceRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,13 +27,15 @@ public class ReportService {
     private final AccountClientService accountClient;
     private final CreditClientService creditClient;
     private final TransactionClientService transactionClient;
-
+    private final DailyBalanceRepository dailyBalanceRepository;
     public ReportService(AccountClientService accountClient,
                          CreditClientService creditClient,
-                         TransactionClientService transactionClient){
+                         TransactionClientService transactionClient,
+                         DailyBalanceRepository dailyBalanceRepository){
         this.accountClient = accountClient;
         this.creditClient = creditClient;
         this.transactionClient = transactionClient;
+        this.dailyBalanceRepository = dailyBalanceRepository;
     }
 
     public Mono<CustomerBalances> getCustomerBalances(String customerId) {
@@ -106,4 +111,76 @@ public class ReportService {
             case BUSINESS -> ProductSubType.BUSINESS_CREDIT;
         };
     }
+    public Mono<List<DailyBalanceSummary>> getMonthlyBalanceSummary(String customerId) {
+        LocalDateTime firstDayOfMonth = LocalDateTime.now().withDayOfMonth(1);
+        LocalDateTime today = LocalDateTime.now();
+        log.info("Finding balances for customer {} between {} and {}", customerId, firstDayOfMonth, today);
+        return dailyBalanceRepository.findByCustomerIdAndDateBetween(customerId, firstDayOfMonth, today)
+                .collectList()
+                .map(this::calculateAverageBalances)
+                .doOnNext(list -> log.info("Fetched {} balance summaries", list.size()))
+                .doOnError(e -> log.error("Error fetching balance summaries", e));
+    }
+    private List<DailyBalanceSummary> calculateAverageBalances(List<DailyBalance> balances) {
+        if (balances.isEmpty()) {
+            return Collections.emptyList(); // Retorna lista vacía si no hay balances
+        }
+        Map<String, List<DailyBalance>> balancesByProduct = balances.stream()
+                .collect(Collectors.groupingBy(DailyBalance::getProductId));
+        return balancesByProduct.entrySet().stream()
+                .map(entry -> {
+                    List<DailyBalance> productBalances = entry.getValue();
+                    BigDecimal totalBalance = productBalances.stream()
+                            .map(d -> d.getBalance() != null ? d.getBalance() : BigDecimal.ZERO) // Manejo de null
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal averageBalance = productBalances.isEmpty()
+                            ? BigDecimal.ZERO // Evita división por cero
+                            : totalBalance.divide(BigDecimal.valueOf(productBalances.size()), 2, RoundingMode.HALF_UP);
+                    DailyBalance firstBalance = productBalances.get(0); // Evita IndexOutOfBoundsException
+                    return new DailyBalanceSummary(
+                            entry.getKey(),
+                            firstBalance.getProductType(),
+                            firstBalance.getSubType(),
+                            averageBalance
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+    public Mono<BaseResponse<List<CategorySummary>>> fetchTransactionSummaryByDate(LocalDate startDate, LocalDate endDate) {
+        return transactionClient.getTransactionsByDate(startDate, endDate)
+                .flatMap(transactions -> {
+                    Map<ProductCategory, List<Transaction>> transactionsByCategory = Arrays.stream(ProductCategory.values())
+                            .collect(Collectors.toMap(category -> category, category -> new ArrayList<>()));
+
+                    if (transactions != null && !transactions.isEmpty()) {
+                        transactions.stream()
+                                .filter(transaction -> transaction != null) // Add null check here
+                                .forEach(transaction -> {
+                                    ProductCategory category = transaction.getProductCategory();
+                                    transactionsByCategory.get(category).add(transaction);
+                                });
+                    }
+
+                    List<CategorySummary> categorySummaries = transactionsByCategory.entrySet().stream()
+                            .map(entry -> {
+                                int quantity = entry.getValue().size();
+                                double totalCommissions = entry.getValue().stream()
+                                        .filter(transaction -> transaction != null && transaction.getCommissions() != null) // Add null check here
+                                        .map(Transaction::getCommissions)
+                                        .mapToDouble(BigDecimal::doubleValue)
+                                        .sum();
+                                return new CategorySummary(entry.getKey().toString(), quantity, totalCommissions);
+                            })
+                            .collect(Collectors.toList());
+
+                    return Mono.just(BaseResponse.<List<CategorySummary>>builder()
+                            .status(HttpStatus.OK.value())
+                            .message("Transactions retrieved successfully")
+                            .data(categorySummaries)
+                            .build());
+                });
+    }
+
+
+
 }

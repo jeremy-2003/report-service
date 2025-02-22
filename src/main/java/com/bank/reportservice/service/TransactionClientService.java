@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -31,4 +32,18 @@ public class TransactionClientService {
                 .doOnError(error -> log.error("Error fetching transactions for customer {} and product {}: {}",
                         customerId, productId, error.getMessage()));
     }
+    public Mono<List<Transaction>> getTransactionsByDate(LocalDate startDate, LocalDate endDate) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/transactions/by-date")
+                        .queryParam("startDate", startDate)
+                        .queryParam("endDate", endDate)
+                        .build())
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Transaction>>>() {})
+                .map(BaseResponse::getData)
+                .doOnError(error -> log.error("Error fetching transactions by date: {}",
+                        error.getMessage()));
+    }
+
 }

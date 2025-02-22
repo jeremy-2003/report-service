@@ -1,19 +1,16 @@
 package com.bank.reportservice.controller;
 
-import com.bank.reportservice.dto.BaseResponse;
-import com.bank.reportservice.dto.CustomerBalances;
-import com.bank.reportservice.dto.ProductMovement;
+import com.bank.reportservice.dto.*;
 import com.bank.reportservice.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -68,5 +65,18 @@ public class ReportController {
                                     .message("Error retrieving movements")
                                     .build()));
                 });
+    }
+    @GetMapping("/{customerId}/summary")
+    public Mono<ResponseEntity<List<DailyBalanceSummary>>> getMonthlyBalanceSummary(@PathVariable String customerId) {
+        return reportService.getMonthlyBalanceSummary(customerId)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+    @GetMapping("/transactions/summary")
+    public Mono<ResponseEntity<BaseResponse<List<CategorySummary>>>> getTransactionSummary(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return reportService.fetchTransactionSummaryByDate(startDate, endDate)
+                .map(ResponseEntity::ok);
     }
 }

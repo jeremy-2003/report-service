@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -44,12 +43,14 @@ public class DailyBalanceService {
                         }),
                 saveCreditBalances(customerId)
                         .onErrorResume(e -> {
-                            log.warn("No credits found for customer {}, continuing without credits.", customerId);
+                            log.warn("No credits found for customer {}, continuing " +
+                                    "without credits.", customerId);
                             return Flux.empty();
                         }),
                 saveCreditCardBalances(customerId)
                         .onErrorResume(e -> {
-                            log.warn("No credit cards found for customer {}, continuing without credit cards.", customerId);
+                            log.warn("No credit cards found for customer {}, " +
+                                    "continuing without credit cards.", customerId);
                             return Flux.empty();
                         })
         ).thenMany(Flux.empty());

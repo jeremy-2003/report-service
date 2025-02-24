@@ -1,109 +1,170 @@
 openapi: 3.0.3
 info:
   title: Report Service API
-  description: API para la generación de reportes financieros y consultas agregadas.
+  description: API for financial reports and aggregated queries
   version: 1.0.0
 servers:
   - url: http://localhost:8085
-    description: Servidor local
+    description: Local server
 paths:
   /api/reports/balances/customer/{customerId}:
     get:
-      summary: Obtener los saldos de los productos financieros de un cliente
-      description: Recupera los saldos de cuentas, tarjetas de crédito y créditos asociados a un cliente.
+      summary: Get customer's financial product balances
+      description: Retrieves balances for accounts, credit cards and loans associated with a customer
       operationId: getCustomerBalances
       parameters:
         - name: customerId
           in: path
           required: true
-          description: ID del cliente
+          description: Customer ID
           schema:
             type: string
       responses:
         '200':
-          description: Saldos recuperados exitosamente
+          description: Balances retrieved successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BaseResponseCustomerBalances'
         '404':
-          description: No se encontraron saldos para el cliente
+          description: No balances found for customer
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponseEmpty'
+                $ref: '#/components/schemas/BaseResponseCustomerBalances'
         '500':
-          description: Error interno del servidor
+          description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponseEmpty'
+                $ref: '#/components/schemas/BaseResponseCustomerBalances'
   /api/reports/movements/customer/{customerId}/product/{productId}:
     get:
-      summary: Obtener los movimientos de un producto financiero
-      description: Recupera los movimientos asociados a una cuenta, tarjeta de crédito o crédito de un cliente.
+      summary: Get movements for a financial product
+      description: Retrieves movements associated with a customer's account, credit card or loan
       operationId: getProductMovements
       parameters:
         - name: customerId
           in: path
           required: true
-          description: ID del cliente
+          description: Customer ID
           schema:
             type: string
         - name: productId
           in: path
           required: true
-          description: ID del producto financiero
+          description: Financial product ID
           schema:
             type: string
       responses:
         '200':
-          description: Movimientos recuperados exitosamente
+          description: Movements retrieved successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BaseResponseProductMovements'
         '404':
-          description: No se encontraron movimientos para el producto
+          description: No movements found for product
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponseEmpty'
+                $ref: '#/components/schemas/BaseResponseProductMovements'
         '500':
-          description: Error interno del servidor
+          description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponseEmpty'
+                $ref: '#/components/schemas/BaseResponseProductMovements'
+  /api/reports/{customerId}/summary:
+    get:
+      summary: Get monthly balance summary
+      description: Retrieves monthly balance summary for a customer
+      operationId: getMonthlyBalanceSummary
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Customer ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DailyBalanceSummary'
+        '404':
+          description: No summary found
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/reports/transactions/summary:
+    get:
+      summary: Get transaction summary by date range
+      description: Retrieves transaction summary for a specific date range
+      operationId: getTransactionSummary
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          description: Start date (ISO format)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          description: End date (ISO format)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Transaction summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseCategorySummary'
 components:
   schemas:
+    BaseResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
     BaseResponseCustomerBalances:
-      type: object
-      properties:
-        status:
-          type: integer
-        message:
-          type: string
-        data:
-          $ref: '#/components/schemas/CustomerBalances'
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CustomerBalances'
     BaseResponseProductMovements:
-      type: object
-      properties:
-        status:
-          type: integer
-        message:
-          type: string
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProductMovement'
-    BaseResponseEmpty:
-      type: object
-      properties:
-        status:
-          type: integer
-        message:
-          type: string
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductMovement'
+    BaseResponseCategorySummary:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategorySummary'
     CustomerBalances:
       type: object
       properties:
@@ -118,17 +179,15 @@ components:
       properties:
         productId:
           type: string
-        customerId:
-          type: string
         type:
           type: string
-          enum: [ACCOUNT, CREDIT_CARD, CREDIT]
+          enum: [ACCOUNT, CREDIT, CREDIT_CARD]
         subType:
           type: string
-          enum: [SAVINGS, CHECKING, FIXED_TERM, PERSONAL_CREDIT_CARD, BUSINESS_CREDIT_CARD, PERSONAL_CREDIT, BUSINESS_CREDIT]
+          enum: [SAVINGS, CHECKING, FIXED_TERM, PERSONAL_CREDIT, BUSINESS_CREDIT, PERSONAL_CREDIT_CARD, BUSINESS_CREDIT_CARD]
         availableBalance:
           type: number
-          format: double
+          format: decimal
     ProductMovement:
       type: object
       properties:
@@ -137,13 +196,37 @@ components:
         date:
           type: string
           format: date-time
-        type:
-          type: string
-          enum: [DEPOSIT, WITHDRAWAL, PAYMENT, PURCHASE]
         amount:
           type: number
-          format: double
+          format: decimal
         productCategory:
           type: string
+          enum: [ACCOUNT, CREDIT, CREDIT_CARD]
         productSubType:
           type: string
+          enum: [SAVINGS, CHECKING, FIXED_TERM, PERSONAL_CREDIT, BUSINESS_CREDIT, PERSONAL_CREDIT_CARD, BUSINESS_CREDIT_CARD]
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL, CREDIT_PAYMENT, CREDIT_CARD_PURCHASE, TRANSFER]
+    CategorySummary:
+      type: object
+      properties:
+        category:
+          type: string
+        quantity:
+          type: integer
+        commissions:
+          type: number
+          format: double
+    DailyBalanceSummary:
+      type: object
+      properties:
+        productId:
+          type: string
+        productType:
+          type: string
+        subType:
+          type: string
+        averageBalance:
+          type: number
+          format: decimal

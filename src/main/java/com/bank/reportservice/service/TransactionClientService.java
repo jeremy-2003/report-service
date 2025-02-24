@@ -2,7 +2,6 @@ package com.bank.reportservice.service;
 
 import com.bank.reportservice.dto.BaseResponse;
 import com.bank.reportservice.model.transaction.Transaction;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -27,9 +26,10 @@ public class TransactionClientService {
                 .uri("/api/transactions/customer/{customerId}/product/{productId}",
                         customerId, productId)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Transaction>>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Transaction>>>() { })
                 .map(BaseResponse::getData)
-                .doOnError(error -> log.error("Error fetching transactions for customer {} and product {}: {}",
+                .doOnError(error -> log.error("Error fetching transactions " +
+                                "for customer {} and product {}: {}",
                         customerId, productId, error.getMessage()));
     }
     public Mono<List<Transaction>> getTransactionsByDate(LocalDate startDate, LocalDate endDate) {
@@ -40,7 +40,7 @@ public class TransactionClientService {
                         .queryParam("endDate", endDate)
                         .build())
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Transaction>>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Transaction>>>() { })
                 .map(BaseResponse::getData)
                 .doOnError(error -> log.error("Error fetching transactions by date: {}",
                         error.getMessage()));

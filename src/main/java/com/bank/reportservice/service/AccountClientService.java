@@ -2,11 +2,9 @@ package com.bank.reportservice.service;
 
 import com.bank.reportservice.dto.BaseResponse;
 import com.bank.reportservice.model.account.Account;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -25,7 +23,7 @@ public class AccountClientService {
         return webClient.get()
                 .uri("/api/accounts/customer/{customerId}", customerId)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Account>>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Account>>>() { })
                 .map(BaseResponse::getData)
                 .doOnError(error -> log.error("Error fetching accounts for customer {}: {}",
                         customerId, error.getMessage()));

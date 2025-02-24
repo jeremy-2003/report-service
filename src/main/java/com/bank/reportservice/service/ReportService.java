@@ -31,7 +31,7 @@ public class ReportService {
     public ReportService(AccountClientService accountClient,
                          CreditClientService creditClient,
                          TransactionClientService transactionClient,
-                         DailyBalanceRepository dailyBalanceRepository){
+                         DailyBalanceRepository dailyBalanceRepository) {
         this.accountClient = accountClient;
         this.creditClient = creditClient;
         this.transactionClient = transactionClient;
@@ -93,23 +93,36 @@ public class ReportService {
     }
     // Mapping methods
     private ProductSubType mapAccountType(AccountType type) {
-        return switch (type) {
-            case SAVINGS -> ProductSubType.SAVINGS;
-            case CHECKING -> ProductSubType.CHECKING;
-            case FIXED_TERM -> ProductSubType.FIXED_TERM;
-        };
+        switch (type) {
+            case SAVINGS:
+                return ProductSubType.SAVINGS;
+            case CHECKING:
+                return ProductSubType.CHECKING;
+            case FIXED_TERM:
+                return ProductSubType.FIXED_TERM;
+            default:
+                throw new IllegalArgumentException("Tipo de cuenta no soportado: " + type);
+        }
     }
     private ProductSubType mapCreditCardType(CreditCardType type) {
-        return switch (type) {
-            case PERSONAL_CREDIT_CARD -> ProductSubType.PERSONAL_CREDIT_CARD;
-            case BUSINESS_CREDIT_CARD -> ProductSubType.BUSINESS_CREDIT_CARD;
-        };
+        switch (type) {
+            case PERSONAL_CREDIT_CARD:
+                return ProductSubType.PERSONAL_CREDIT_CARD;
+            case BUSINESS_CREDIT_CARD:
+                return ProductSubType.BUSINESS_CREDIT_CARD;
+            default:
+                throw new IllegalArgumentException("Tipo de tarjeta de crédito no soportado: " + type);
+        }
     }
     private ProductSubType mapCreditType(CreditType type) {
-        return switch (type) {
-            case PERSONAL -> ProductSubType.PERSONAL_CREDIT;
-            case BUSINESS -> ProductSubType.BUSINESS_CREDIT;
-        };
+        switch (type) {
+            case PERSONAL:
+                return ProductSubType.PERSONAL_CREDIT;
+            case BUSINESS:
+                return ProductSubType.BUSINESS_CREDIT;
+            default:
+                throw new IllegalArgumentException("Tipo de crédito no soportado: " + type);
+        }
     }
     public Mono<List<DailyBalanceSummary>> getMonthlyBalanceSummary(String customerId) {
         LocalDateTime firstDayOfMonth = LocalDateTime.now().withDayOfMonth(1);
@@ -146,11 +159,14 @@ public class ReportService {
                 })
                 .collect(Collectors.toList());
     }
-    public Mono<BaseResponse<List<CategorySummary>>> fetchTransactionSummaryByDate(LocalDate startDate, LocalDate endDate) {
+    public Mono<BaseResponse<List<CategorySummary>>> fetchTransactionSummaryByDate(LocalDate startDate,
+                                                                                   LocalDate endDate) {
         return transactionClient.getTransactionsByDate(startDate, endDate)
                 .flatMap(transactions -> {
-                    Map<ProductCategory, List<Transaction>> transactionsByCategory = Arrays.stream(ProductCategory.values())
-                            .collect(Collectors.toMap(category -> category, category -> new ArrayList<>()));
+                    Map<ProductCategory, List<Transaction>> transactionsByCategory =
+                            Arrays.stream(ProductCategory.values())
+                            .collect(Collectors.toMap(category ->
+                                    category, category -> new ArrayList<>()));
 
                     if (transactions != null && !transactions.isEmpty()) {
                         transactions.stream()
@@ -161,11 +177,13 @@ public class ReportService {
                                 });
                     }
 
-                    List<CategorySummary> categorySummaries = transactionsByCategory.entrySet().stream()
+                    List<CategorySummary> categorySummaries =
+                            transactionsByCategory.entrySet().stream()
                             .map(entry -> {
                                 int quantity = entry.getValue().size();
                                 double totalCommissions = entry.getValue().stream()
-                                        .filter(transaction -> transaction != null && transaction.getCommissions() != null) // Add null check here
+                                        .filter(transaction ->
+                                                transaction != null && transaction.getCommissions() != null)
                                         .map(Transaction::getCommissions)
                                         .mapToDouble(BigDecimal::doubleValue)
                                         .sum();
@@ -180,7 +198,4 @@ public class ReportService {
                             .build());
                 });
     }
-
-
-
 }

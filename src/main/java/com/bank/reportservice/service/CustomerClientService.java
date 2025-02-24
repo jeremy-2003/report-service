@@ -33,9 +33,9 @@ public class CustomerClientService {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         Mono.error(new RuntimeException("Server error: " + response.statusCode()))
                 )
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Customer>>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Customer>>>() { })
                 .flatMap(response -> {
-                    if(response.getData() != null){
+                    if (response.getData() != null) {
                         return Mono.just(response.getData());
                     } else {
                         return Mono.empty();

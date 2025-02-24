@@ -1,6 +1,4 @@
 package com.bank.reportservice.dto;
-
-import com.bank.reportservice.model.transaction.ProductCategory;
 import lombok.*;
 
 @Data

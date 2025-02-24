@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class DailyBalanceScheduler {
     private final DailyBalanceService dailyBalanceService;
 
-    public DailyBalanceScheduler(DailyBalanceService dailyBalanceService){
+    public DailyBalanceScheduler(DailyBalanceService dailyBalanceService) {
         this.dailyBalanceService = dailyBalanceService;
     }
 

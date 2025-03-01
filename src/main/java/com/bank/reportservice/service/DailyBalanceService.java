@@ -15,15 +15,17 @@ public class DailyBalanceService {
     private final CreditClientService creditService;
     private final CustomerClientService customerClientService;
     private final DailyBalanceRepository dailyBalanceRepository;
-
+    private final DebitCardClientService debitCardClientService;
     public DailyBalanceService(AccountClientService accountService,
                                CreditClientService creditService,
                                DailyBalanceRepository dailyBalanceRepository,
-                               CustomerClientService customerClientService) {
+                               CustomerClientService customerClientService,
+                               DebitCardClientService debitCardClientService) {
         this.accountService = accountService;
         this.creditService = creditService;
         this.dailyBalanceRepository = dailyBalanceRepository;
         this.customerClientService = customerClientService;
+        this.debitCardClientService = debitCardClientService;
     }
 
     public Mono<Void> processDailyBalances() {
@@ -52,6 +54,12 @@ public class DailyBalanceService {
                             log.warn("No credit cards found for customer {}, " +
                                     "continuing without credit cards.", customerId);
                             return Flux.empty();
+                        }),
+                saveDebitCardBalances(customerId)
+                        .onErrorResume(e -> {
+                            log.warn("No debit cards found for customer {}, " +
+                                    "continuing without debit cards.", customerId);
+                            return Flux.empty();
                         })
         ).thenMany(Flux.empty());
     }
@@ -76,7 +84,35 @@ public class DailyBalanceService {
                 .flatMap(card -> saveDailyBalance(customerId, card.getId(), "CREDIT_CARD",
                         card.getCardType().name(), card.getAvailableBalance()));
     }
-
+    private Flux<Void> saveDebitCardBalances(String customerId) {
+        return debitCardClientService.getDebitCardsByCustomer(customerId)
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(debitCard -> {
+                    String primaryAccountId = debitCard.getPrimaryAccountId();
+                    return accountService.getAccountById(primaryAccountId)
+                            .flatMap(account -> {
+                                BigDecimal accountBalance = BigDecimal.valueOf(account.getBalance());
+                                return saveDailyBalance(
+                                        customerId,
+                                        debitCard.getId(),
+                                        "DEBIT_CARD",
+                                        null,
+                                        accountBalance
+                                );
+                            })
+                            .onErrorResume(e -> {
+                                log.error("Error obtaining balance for debit card {}, account {}: {}",
+                                        debitCard.getId(), primaryAccountId, e.getMessage());
+                                return saveDailyBalance(
+                                        customerId,
+                                        debitCard.getId(),
+                                        "DEBIT_CARD",
+                                        "DEBIT",
+                                        BigDecimal.ZERO
+                                );
+                            });
+                });
+    }
     private Mono<Void> saveDailyBalance(String customerId, String productId, String productType,
                                         String subType, BigDecimal balance) {
         DailyBalance dailyBalance = new DailyBalance();

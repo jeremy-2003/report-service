@@ -23,7 +23,7 @@ public class TransactionClientService {
     }
     public Mono<List<Transaction>> getTransactionsByCustomerAndProduct(String customerId, String productId) {
         return webClient.get()
-                .uri("/api/transactions/customer/{customerId}/product/{productId}",
+                .uri("/transactions/customer/{customerId}/product/{productId}",
                         customerId, productId)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Transaction>>>() { })
@@ -35,7 +35,7 @@ public class TransactionClientService {
     public Mono<List<Transaction>> getTransactionsByDate(LocalDate startDate, LocalDate endDate) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/api/transactions/by-date")
+                        .path("/transactions/by-date")
                         .queryParam("startDate", startDate)
                         .queryParam("endDate", endDate)
                         .build())
@@ -45,5 +45,4 @@ public class TransactionClientService {
                 .doOnError(error -> log.error("Error fetching transactions by date: {}",
                         error.getMessage()));
     }
-
 }

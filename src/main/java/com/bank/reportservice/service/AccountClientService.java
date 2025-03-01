@@ -21,11 +21,19 @@ public class AccountClientService {
     }
     public Mono<List<Account>> getAccountsByCustomer(String customerId) {
         return webClient.get()
-                .uri("/api/accounts/customer/{customerId}", customerId)
+                .uri("/accounts/customer/{customerId}", customerId)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Account>>>() { })
                 .map(BaseResponse::getData)
                 .doOnError(error -> log.error("Error fetching accounts for customer {}: {}",
                         customerId, error.getMessage()));
+    }
+    public Mono<Account> getAccountById(String accountId) {
+        return webClient.get()
+                .uri("/accounts/{accountId}", accountId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<Account>>() { })
+                .map(BaseResponse::getData)
+                .doOnError(error -> log.error("Error fetching account with ID {}: {}", accountId, error.getMessage()));
     }
 }

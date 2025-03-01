@@ -56,7 +56,6 @@ class DailyBalanceSchedulerTest {
     }
     @Test
     void verifyScheduledAnnotation() {
-        // Verify that the method has the correct @Scheduled annotation
         Scheduled annotation = null;
         try {
             annotation = DailyBalanceScheduler.class
@@ -71,7 +70,6 @@ class DailyBalanceSchedulerTest {
     }
     @Test
     void verifyComponentAnnotation() {
-        // Verify that the class has the @Component annotation
         Component annotation = DailyBalanceScheduler.class.getAnnotation(Component.class);
         assertNotNull(annotation, "@Component annotation not found");
     }

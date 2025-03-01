@@ -71,7 +71,7 @@ class CustomerClientServiceTest {
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri("/")).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        // Configuración del error 4xx
+
         when(responseSpec.onStatus(any(Predicate.class), any()))
                 .thenReturn(responseSpec);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
@@ -92,7 +92,7 @@ class CustomerClientServiceTest {
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri("/")).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        // Configuración del error 5xx
+
         when(responseSpec.onStatus(any(Predicate.class), any()))
                 .thenReturn(responseSpec);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))

@@ -91,7 +91,7 @@ class AccountClientServiceTest {
                 .thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         BaseResponse<List<Account>> response = new BaseResponse<>();
-        response.setData(Collections.emptyList());  // Cambiado de null a lista vacía
+        response.setData(Collections.emptyList());
         response.setStatus(200);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(response));

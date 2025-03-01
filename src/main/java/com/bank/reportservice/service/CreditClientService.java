@@ -23,7 +23,7 @@ public class CreditClientService {
     }
     public Mono<List<CreditCard>> getCreditCardsByCustomer(String customerId) {
         return webClient.get()
-                .uri("/api/credit-cards/customer/{customerId}", customerId)
+                .uri("/credit-cards/customer/{customerId}", customerId)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<CreditCard>>>() { })
                 .map(BaseResponse::getData)
@@ -32,7 +32,7 @@ public class CreditClientService {
     }
     public Mono<List<Credit>> getCreditsByCustomer(String customerId) {
         return webClient.get()
-                .uri("/api/credits/customer/{customerId}", customerId)
+                .uri("/credits/customer/{customerId}", customerId)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Credit>>>() { })
                 .map(BaseResponse::getData)

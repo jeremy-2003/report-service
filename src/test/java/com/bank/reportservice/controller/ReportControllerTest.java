@@ -211,7 +211,6 @@ class ReportControllerTest {
                 .exchange()
                 .expectStatus().isBadRequest();
     }
-    // Helper methods
     private ProductBalance createProductBalance(String id, ProductCategory category) {
         return ProductBalance.builder()
                 .productId(id)

@@ -1,5 +1,9 @@
 package com.bank.reportservice.service;
 
+import com.bank.reportservice.client.AccountClientService;
+import com.bank.reportservice.client.CreditClientService;
+import com.bank.reportservice.client.DebitCardClientService;
+import com.bank.reportservice.client.TransactionClientService;
 import com.bank.reportservice.dto.*;
 import com.bank.reportservice.model.account.Account;
 import com.bank.reportservice.model.account.AccountType;
@@ -46,9 +50,13 @@ public class ReportService {
         this.dailyBalanceRepository = dailyBalanceRepository;
         this.debitCardClientService = debitCardClientService;
     }
-    public Mono<CustomerBalances> getResumeByProductAndUserAndDates(String typeProduct, String customerId, LocalDate startDate, LocalDate endDate) {
+    public Mono<CustomerBalances> getResumeByProductAndUserAndDates(String typeProduct,
+                                                                    String customerId,
+                                                                    LocalDate startDate,
+                                                                    LocalDate endDate) {
         return getCustomerBalances(customerId)
-                .map(customerBalances -> filterBalancesByTypeAndDates(customerBalances, typeProduct, startDate, endDate));
+                .map(customerBalances ->
+                    filterBalancesByTypeAndDates(customerBalances, typeProduct, startDate, endDate));
     }
     public Mono<CustomerBalances> getCustomerBalances(String customerId) {
         return Mono.zip(
@@ -56,10 +64,15 @@ public class ReportService {
                 creditClient.getCreditCardsByCustomer(customerId),
                 creditClient.getCreditsByCustomer(customerId),
                 debitCardClientService.getDebitCardsByCustomer(customerId)
-        ).flatMap(tuple -> mapToCustomerBalances(customerId, tuple));
+        ).flatMap(tuple ->
+            mapToCustomerBalances(customerId, tuple));
     }
 
-    private Mono<CustomerBalances> mapToCustomerBalances(String customerId, Tuple4<List<Account>, List<CreditCard>, List<Credit>, List<DebitCard>> tuple) {
+    private Mono<CustomerBalances> mapToCustomerBalances(String customerId,
+                                                         Tuple4<List<Account>,
+                                                         List<CreditCard>,
+                                                         List<Credit>,
+                                                         List<DebitCard>> tuple) {
         List<ProductBalance> products = new ArrayList<>();
 
         tuple.getT1().forEach(account -> products.add(
@@ -117,7 +130,10 @@ public class ReportService {
                 });
     }
 
-    private CustomerBalances filterBalancesByTypeAndDates(CustomerBalances customerBalances, String typeProduct, LocalDate startDate, LocalDate endDate) {
+    private CustomerBalances filterBalancesByTypeAndDates(CustomerBalances customerBalances,
+                                                          String typeProduct,
+                                                          LocalDate startDate,
+                                                          LocalDate endDate) {
         List<ProductBalance> filteredProducts = customerBalances.getProducts().stream()
                 .filter(product -> filterByProductType(product, typeProduct))
                 .filter(product -> filterByDateRange(product, startDate, endDate))

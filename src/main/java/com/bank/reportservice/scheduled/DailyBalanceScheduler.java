@@ -13,7 +13,7 @@ public class DailyBalanceScheduler {
         this.dailyBalanceService = dailyBalanceService;
     }
 
-    @Scheduled(cron = "59 59 23 * * ?")
+    @Scheduled(cron = "10 14 01 * * ?")
     public void executeDailyBalanceJob() {
         log.info("Starting the scheduled process of daily balances...");
         dailyBalanceService.processDailyBalances()

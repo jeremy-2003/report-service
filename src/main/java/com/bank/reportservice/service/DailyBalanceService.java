@@ -1,4 +1,8 @@
 package com.bank.reportservice.service;
+import com.bank.reportservice.client.AccountClientService;
+import com.bank.reportservice.client.CreditClientService;
+import com.bank.reportservice.client.CustomerClientService;
+import com.bank.reportservice.client.DebitCardClientService;
 import com.bank.reportservice.model.balance.DailyBalance;
 import com.bank.reportservice.repository.DailyBalanceRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +40,7 @@ public class DailyBalanceService {
                 .then();
     }
 
-    private Flux<Void> saveBalancesForCustomer(String customerId) {
+    public Flux<Void> saveBalancesForCustomer(String customerId) {
         return Flux.merge(
                 saveAccountBalances(customerId)
                         .onErrorResume(e -> {
@@ -64,27 +68,27 @@ public class DailyBalanceService {
         ).thenMany(Flux.empty());
     }
 
-    private Flux<Void> saveAccountBalances(String customerId) {
+    public Flux<Void> saveAccountBalances(String customerId) {
         return accountService.getAccountsByCustomer(customerId)
                 .flatMapMany(Flux::fromIterable)
                 .flatMap(account -> saveDailyBalance(customerId, account.getId(), "ACCOUNT",
                         account.getAccountType().name(), BigDecimal.valueOf(account.getBalance())));
     }
 
-    private Flux<Void> saveCreditBalances(String customerId) {
+    public Flux<Void> saveCreditBalances(String customerId) {
         return creditService.getCreditsByCustomer(customerId)
                 .flatMapMany(Flux::fromIterable)
                 .flatMap(credit -> saveDailyBalance(customerId, credit.getId(), "CREDIT",
                         credit.getCreditType().name(), credit.getRemainingBalance()));
     }
 
-    private Flux<Void> saveCreditCardBalances(String customerId) {
+    public Flux<Void> saveCreditCardBalances(String customerId) {
         return creditService.getCreditCardsByCustomer(customerId)
                 .flatMapMany(Flux::fromIterable)
                 .flatMap(card -> saveDailyBalance(customerId, card.getId(), "CREDIT_CARD",
                         card.getCardType().name(), card.getAvailableBalance()));
     }
-    private Flux<Void> saveDebitCardBalances(String customerId) {
+    public Flux<Void> saveDebitCardBalances(String customerId) {
         return debitCardClientService.getDebitCardsByCustomer(customerId)
                 .flatMapMany(Flux::fromIterable)
                 .flatMap(debitCard -> {
@@ -113,7 +117,7 @@ public class DailyBalanceService {
                             });
                 });
     }
-    private Mono<Void> saveDailyBalance(String customerId, String productId, String productType,
+    public Mono<Void> saveDailyBalance(String customerId, String productId, String productType,
                                         String subType, BigDecimal balance) {
         DailyBalance dailyBalance = new DailyBalance();
         dailyBalance.setCustomerId(customerId);
